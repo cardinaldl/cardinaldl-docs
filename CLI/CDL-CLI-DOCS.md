@@ -351,6 +351,7 @@ This loads manifests, so it takes longer to return. Use [`--workers`](#workers) 
 | `-w` | number | n/a | `1` |
 
 Maximum parallel workers for [`--full`](#full) listings. Only used with `--full`. An invalid value falls back to `1` with a warning.
+Use with care as having too many workers could result in issues. For example crunchyroll and hidive are happy with 3, but disney is only happy when using 1.
 
 #### <a id="jsonoutput"></a>`--jsonoutput`, `--jo`
 
