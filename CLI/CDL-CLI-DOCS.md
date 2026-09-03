@@ -18,15 +18,20 @@ cardinaldl [options]
 
 ## Modes at a glance
 
-The CLI does one of five things per run, decided by which arguments you pass:
+The CLI does one thing per run, decided by which arguments you pass:
 
 | Mode | Trigger | Example |
 | :-- | :-- | :-- |
 | Download | [`--item`](#item) (plus [`--episode`](#episode) for a series) | `cardinaldl --service crunchy -i ABC -s 1 -e 5` |
+| Download an episode by ID | [`--episode`](#episode) with a bare episode ID (no `--item`) | `cardinaldl --service crunchy -e EPISODE_ID` |
+| Download a season by ID | [`--season`](#season) + [`--episode`](#episode) with a season ID (no `--item`) | `cardinaldl --service crunchy -s SEASON_ID -e 1-5` |
 | List an item | [`--listitem`](#listitem) (`--srz`) | `cardinaldl --service crunchy --srz ABC` |
-| List a season by ID | [`--season`](#season) with a season ID (no `--listitem`) | `cardinaldl --service crunchy -s SEASON_ID` |
+| List a season by ID | [`--season`](#season) with a season ID (no `--listitem`, no `--episode`) | `cardinaldl --service crunchy -s SEASON_ID` |
+| List an episode by ID | [`--listitem`](#listitem) (`--srz`) with an episode ID | `cardinaldl --service crunchy --srz EPISODE_ID` |
 | Sign in | [`--login`](#login) | `cardinaldl --login --username you --password pw` |
 | List languages | [`--listlangs`](#listlangs) | `cardinaldl --listlangs` |
+
+Downloading/listing an episode or season by its bare ID works only on services that can resolve that ID without the parent series. When a service can't, the CLI says so and points you to the `--item` / `--srz` form.
 
 ---
 
@@ -113,7 +118,8 @@ Path to a `storage.db` to use instead of the default.
 | `-i` | string | n/a | none |
 
 The item (title) ID to download. Passing this puts the CLI in download mode. If the item is a movie, it downloads straight away.  
-Passing [`--season`](#season) or [`--episode`](#episode) for a movie is an error. If the item is a series, you must also pass [`--episode`](#episode).
+Passing [`--season`](#season) or [`--episode`](#episode) for a movie is an error. If the item is a series, you must also pass [`--episode`](#episode).  
+You can also download without `--item` by passing a bare episode ID to [`--episode`](#episode), or a season ID to [`--season`](#season) together with [`--episode`](#episode). See those options.
 
 #### <a id="season"></a>`--season`, `-s`
 
@@ -123,7 +129,8 @@ Passing [`--season`](#season) or [`--episode`](#episode) for a movie is an error
 
 Season number or season ID. When downloading a series and this is omitted, it defaults to season `1`.  
 If two seasons share the same number, pass the season ID instead.  
-Passed on its own with a season ID (without [`--listitem`](#listitem)), it lists a season directly by its ID, for services that support that.
+Passed on its own with a season ID (without [`--listitem`](#listitem)), it lists a season directly by its ID, for services that support that.  
+Passed with a season ID **and** [`--episode`](#episode) but no [`--item`](#item), it downloads the selected episodes of that season directly by its ID, for services that support that.
 
 #### <a id="episode"></a>`--episode`, `-e`
 
@@ -132,7 +139,8 @@ Passed on its own with a season ID (without [`--listitem`](#listitem)), it lists
 | `-e` | string | n/a | none (required to download a series episode) |
 
 Which episode(s) to download. Accepts a single number (`5`), an episode ID, a range (`01-24`), a comma list (`1,3,5`), or a mix (`1-3,7`).  
-Episodes named in a range that do not exist are skipped with a warning rather than failing the whole run. Ignored for movies.
+Episodes named in a range that do not exist are skipped with a warning rather than failing the whole run. Ignored for movies.  
+Passed on its own with an episode ID (no [`--item`](#item) and no [`--season`](#season)), it downloads that single episode directly by its ID, for services that support that. With no season context a bare `-e` must be one episode ID. Numbers, ranges, and lists need a [`--season`](#season) or [`--item`](#item) to resolve against.
 
 ---
 
@@ -297,7 +305,7 @@ Keep every subtitle track as its own file instead of muxing them in.
 | :-- | :-- | :-- | :-- |
 | `--dlp` | string | n/a | GUI download path, else current folder |
 
-Where to write the finished file. When downloading ([`--item`](#item)), the path must already exist or the run exits.  
+Where to write the finished file. When downloading, the path must already exist or the run exits. This applies with [`--item`](#item), a bare [`--episode`](#episode) ID, or a [`--season`](#season) ID plus [`--episode`](#episode).  
 When not set, the CLI uses the GUI's stored download path if this machine can use it, otherwise the current folder.  
 A stored Windows path on a non-Windows machine is ignored with a warning and the current folder is used instead.  
 The CLI always writes the file directly into this path. It does not build a per-series/season subfolder the way the GUI does.
@@ -332,8 +340,9 @@ Decryption tool to use for this run.
 | :-- | :-- | :-- | :-- |
 | `--srz` | string | n/a | none |
 
-Output the series/season/episode information for an item and exit without downloading. For a series it lists seasons and episodes.  
-Pass [`--season`](#season) to focus on one season. Output goes to stdout as text unless [`--jsonoutput`](#jsonoutput) is set.
+Output the series/season/episode information for an item and exit without downloading. For a series it lists seasons and episodes. For a movie it prints the movie's details.  
+The ID may be a series, a movie, or (on services that support it) a bare episode ID, in which case it prints that one episode's details.  
+Pass [`--season`](#season) to focus on one season. Output goes to stdout as formatted text unless [`--jsonoutput`](#jsonoutput) is set.
 
 #### <a id="full"></a>`--full`
 
@@ -341,7 +350,7 @@ Pass [`--season`](#season) to focus on one season. Output goes to stdout as text
 | :-- | :-- | :-- | :-- |
 | none | boolean | n/a | `false` |
 
-Include richer per-track detail (available audio tracks, subtitle variants, and qualities) in [`--listitem`](#listitem) output.  
+Include richer per-track detail (available audio tracks, subtitle variants, and qualities) in listing output. This covers both [`--listitem`](#listitem) and the by-ID season listing ([`--season`](#season) with a season ID).  
 This loads manifests, so it takes longer to return. Use [`--workers`](#workers) to speed it up.
 
 #### <a id="workers"></a>`--workers`, `-w`
@@ -351,7 +360,6 @@ This loads manifests, so it takes longer to return. Use [`--workers`](#workers) 
 | `-w` | number | n/a | `1` |
 
 Maximum parallel workers for [`--full`](#full) listings. Only used with `--full`. An invalid value falls back to `1` with a warning.
-Keep in mind setting this too high may result in errors. For example Crunchyroll and Hidive are happy with 3 workers. No issues at all. But with ADN you can get can get a temporary ban for 5 minutes. YMMV.
 
 #### <a id="jsonoutput"></a>`--jsonoutput`, `--jo`
 
@@ -448,6 +456,24 @@ Download a movie (no season or episode):
 
 ```
 cardinaldl --service crunchy -i ID
+```
+
+Download a single episode by its bare episode ID (no item):
+
+```
+cardinaldl --service crunchy -e EPISODE_ID
+```
+
+Download episodes of a season by its bare season ID (no item):
+
+```
+cardinaldl --service crunchy -s SEASON_ID -e 1-5
+```
+
+List a single episode by its bare episode ID:
+
+```
+cardinaldl --service crunchy --srz EPISODE_ID
 ```
 
 Pick quality, dubs, and subtitles:
