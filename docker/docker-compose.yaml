@@ -1,0 +1,21 @@
+services:
+    server:
+        image: cardinaldl/cardinaldl:latest
+        ports:
+            - '${PORT:-4173}:4173'
+            - '${ARR_PORT:-9117}:9117'
+        volumes:
+            - ./cdl/config:/config
+            - ./cdl/downloads:/downloads
+            - ./cdl/temp:/tmp
+            - ./cdl/arr/arr-torrents:/data/torrents
+            - ./cdl/arr/arr-completed:/data/completed
+        environment:
+            PORT: 4173
+            REMOTE_ACCESS_PASSWORD: ${REMOTE_ACCESS_PASSWORD:-}
+            DOWNLOAD_PATH: /downloads
+            TEMP_PATH: /tmp
+            ARR_INTEGRATION_ENABLED: '${ARR_INTEGRATION_ENABLED:-false}'
+            ARR_TORRENT_FOLDER: /data/torrents
+            ARR_WATCH_FOLDER: /data/completed
+            ARR_PORT: 9117
