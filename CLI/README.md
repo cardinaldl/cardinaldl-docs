@@ -59,10 +59,21 @@ To set up the CLI on another machine, use the Export function in the desktop app
 Your service logins and defaults come across in that file. Your CardinalDL account login does not, so sign in once on the new machine:
 
 ```
-cardinaldl --login --username you@example.com --password 'your-password'
+cardinaldl --login --username "your_cdl_username" --password "your_cdl_password"
 ```
 
 That signs you in and the CLI works normally after. You only do this once per machine, and it does not touch your service logins.
+
+## Bringing your settings over with Settings sync
+
+If you turned on Settings sync in the desktop app (Account > Settings sync), you can pull your settings and service logins onto another machine over the network instead of copying the `.db` file by hand. Sign in once, then download your backup:
+
+```
+cardinaldl --login --username "your_cdl_username" --password "your_cdl_password"
+cardinaldl --sync-download --sync-key "your-encryption-key"
+```
+
+The `--sync-key` is the encryption key you chose when you enabled Settings sync. This replaces this install's `storage.db` with your backup and keeps you signed in. See [`--sync-download`](./CDL-CLI-DOCS.md#sync-download) for the full details.
 
 ## Full reference
 

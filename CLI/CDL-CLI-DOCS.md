@@ -12,7 +12,7 @@ cardinaldl [options]
 
 > [!IMPORTANT]
 > You must be signed in before the CLI can download or list anything. Sign in from the GUI, or use [`--login`](#login) once from the command line.  
-> `--service` is required for every mode except [`--login`](#login) and [`--listlangs`](#listlangs).
+> `--service` is required for every mode except [`--login`](#login), [`--listlangs`](#listlangs), [`--self-update`](#self-update), and [`--sync-download`](#sync-download).
 
 ---
 
@@ -30,6 +30,8 @@ The CLI does one thing per run, decided by which arguments you pass:
 | List an episode by ID | [`--listitem`](#listitem) (`--srz`) with an episode ID | `cardinaldl --service crunchy --srz EPISODE_ID` |
 | Sign in | [`--login`](#login) | `cardinaldl --login --username you --password pw` |
 | List languages | [`--listlangs`](#listlangs) | `cardinaldl --listlangs` |
+| Restore settings backup | [`--sync-download`](#sync-download) + [`--sync-key`](#sync-key) | `cardinaldl --sync-download --sync-key 'your-key'` |
+| Update the CLI | [`--self-update`](#self-update) | `cardinaldl --self-update` |
 
 Downloading/listing an episode or season by its bare ID works only on services that can resolve that ID without the parent series. When a service can't, the CLI says so and points you to the `--item` / `--srz` form.
 
@@ -66,8 +68,6 @@ Downloading/listing an episode or season by its bare ID works only on services t
 - [Paths](#paths)
     - [`--dlpath`, `--dlp`](#dlpath)
     - [`--temppath`, `--tp`](#temppath)
-- [Decryption](#decryption)
-    - [`--dectool`, `--dt`](#dectool)
 - [Listing & info](#listing--info)
     - [`--listitem`, `--srz`](#listitem)
     - [`--full`](#full)
@@ -78,6 +78,12 @@ Downloading/listing an episode or season by its bare ID works only on services t
     - [`--login`](#login)
     - [`--username`](#username)
     - [`--password`](#password)
+- [Settings sync](#settings-sync)
+    - [`--sync-download`](#sync-download)
+    - [`--sync-key`](#sync-key)
+    - [`--sync-outputpath`](#sync-outputpath)
+- [Maintenance](#maintenance)
+    - [`--self-update`](#self-update)
 - [Built-ins](#built-ins)
     - [`--help`, `-h`](#help)
     - [`--version`, `-V`](#version)
@@ -92,10 +98,10 @@ Downloading/listing an episode or season by its bare ID works only on services t
 
 | Aliases | Type | Choices | Default |
 | :-- | :-- | :-- | :-- |
-| none | choice | `adn`, `akiba`, `amazon`, `animebox`, `crunchy`, `disney`, `hbomax`, `hidive`, `jonuplay`, `mgm`, `netflix`, `oceanveil`, `paramount`, `peacock`, `playerpl`, `rtl` | none (required) |
+| none | choice | `adn`, `akiba`, `amazon`, `animebox`, `appletv`, `crunchy`, `disney`, `hbomax`, `hidive`, `jonuplay`, `joyn`, `mgm`, `netflix`, `oceanveil`, `paramount`, `peacock`, `playerpl`, `rtl`, `toggo`, `viki` | none (required) |
 
 The service to use, by short name. The value is lower-cased, so `CRUNCHY` and `crunchy` are the same.  
-Required for every mode except [`--login`](#login) and [`--listlangs`](#listlangs). Omitting it there exits with `Missing required argument: service`.  
+Required for every mode except [`--login`](#login), [`--listlangs`](#listlangs), [`--self-update`](#self-update), and [`--sync-download`](#sync-download). Omitting it where it is required exits with `Missing required argument: service`.  
 If the service exists but is not in your account's allowed services, the run exits after login with a "not available for this account" message.  
 Run [`--help`](#help) to see the exact list your build supports.
 
@@ -320,18 +326,6 @@ Override the temp folder used for in-progress segments before the final file is 
 
 ---
 
-## Decryption
-
-#### <a id="dectool"></a>`--dectool`, `--dt`
-
-| Aliases | Type | Choices | Default |
-| :-- | :-- | :-- | :-- |
-| `--dt`, `--decTool` | choice | `mp4decrypt`, `shaka` | configured decryption tool |
-
-Decryption tool to use for this run.
-
----
-
 ## Listing & info
 
 #### <a id="listitem"></a>`--listitem`, `--srz`
@@ -406,6 +400,63 @@ Account username, used only with [`--login`](#login).
 | none | string | n/a | none |
 
 Account password, used only with [`--login`](#login).
+
+---
+
+## Settings sync
+
+Settings sync keeps a client-side-encrypted copy of your settings and service logins on the CardinalDL server. You set it up in the desktop app under "Account > Settings sync", with a key of at least 8 characters. The server never sees your key or your data, and a lost key means the backup can't be recovered. On the CLI, [`--sync-download`](#sync-download) is the restore side. Creating a backup is done in the GUI.
+
+#### <a id="sync-download"></a>`--sync-download`
+
+| Aliases | Type | Choices | Default |
+| :-- | :-- | :-- | :-- |
+| `--syncDownload` | boolean | n/a | `false` |
+
+Download your encrypted settings backup, replace this install's `storage.db`, and exit. Requires [`--sync-key`](#sync-key), and you must be signed in first ([`--login`](#login)). On a normal restore your old database is kept as `storage.db.old-N` and this device's login is carried over so you stay signed in. It replaces the `storage.db` at the default location, or the one next to [`--configpath`](#configpath). Use [`--sync-outputpath`](#sync-outputpath) to write to a separate file instead.
+
+What it can print, and what each line means:
+
+| Output | Meaning |
+| :-- | :-- |
+| `Restore complete.` | The backup was installed. There was no existing database to keep. |
+| `Restore complete. Your old database was saved as storage.db.old-N.` | The backup was installed and your previous `storage.db` was kept as `storage.db.old-N` |
+| `Wrote the settings backup to <path>. The active database was not changed.` | You passed [`--sync-outputpath`](#sync-outputpath), so the backup went to that file and your live database was left alone. |
+| `Sign in before downloading a sync. Run --login first.` | This install is not signed in. Run [`--login`](#login) once first. |
+| `--sync-download requires --sync-key.` | No [`--sync-key`](#sync-key) was given. |
+| `That key does not match the backup. Nothing was changed.` | The key is wrong, so the backup could not be decrypted. |
+| `The download was corrupt (checksum mismatch). Nothing was changed.` | The downloaded file failed its checksum. |
+| `Sync download failed: ...` | Any other error, such as the downloaded database not validating. |
+
+The first three are success (exit status 0), the rest are errors (exit status 1). Every error leaves your current database as it was.
+
+#### <a id="sync-key"></a>`--sync-key`
+
+| Aliases | Type | Choices | Default |
+| :-- | :-- | :-- | :-- |
+| `--syncKey` | string | n/a | none |
+
+The encryption key for [`--sync-download`](#sync-download), the same key you set when enabling Settings sync in the desktop app. Required whenever you use `--sync-download`.
+
+#### <a id="sync-outputpath"></a>`--sync-outputpath`
+
+| Aliases | Type | Choices | Default |
+| :-- | :-- | :-- | :-- |
+| `--syncOutputpath` | string | n/a | none |
+
+Write the downloaded database to this path instead of replacing the active one, used with [`--sync-download`](#sync-download). Your current `storage.db` is left untouched and the CLI prints where it wrote the file. Pointing it at the active database does the normal in-place replace.
+
+---
+
+## Maintenance
+
+#### <a id="self-update"></a>`--self-update`
+
+| Aliases | Type | Choices | Default |
+| :-- | :-- | :-- | :-- |
+| `--selfUpdate` | boolean | n/a | `false` |
+
+Update the CLI to the latest release.
 
 ---
 
@@ -515,7 +566,32 @@ cardinaldl --listlangs
 Sign in from the command line:
 
 ```
-cardinaldl --login --username you@example.com --password 'your-password'
+cardinaldl --login --username "your_cdl_username" --password "your_cdl_password"
+```
+
+Restore your settings backup onto this machine (sign in first if this install is new):
+
+```
+cardinaldl --login --username "your_cdl_username" --password "your_cdl_password"
+cardinaldl --sync-download --sync-key "your-encryption-key"
+```
+
+Download the backup to a separate file instead of replacing your active database:
+
+```
+cardinaldl --sync-download --sync-key "your-encryption-key" --sync-outputpath ./restored.db
+```
+
+Replace your `storage.db` with a backup thats in a different location:
+
+```
+cardinaldl --sync-download --sync-key "your-encryption-key" --sync-outputpath "/path/to/other/storage.db" --configpath "/path/to/other/storage.db"
+```
+
+Update the CLI to the latest release:
+
+```
+cardinaldl --self-update
 ```
 
 Download all subtitles for the episode and keep the subtitles as individual ASS files:
