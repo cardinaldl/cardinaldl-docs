@@ -110,8 +110,6 @@ The web UI is protected by a password so that only you can reach it.
 - If you leave it empty, CardinalDL creates a random password on first start and saves it. You will not be shown that password, so set your own instead.
 - If you ever set the password from inside the web UI rather than the environment, it needs to be at least 8 characters.
 
-Set those in your `.env`. Run `id -u` and `id -g` on the host to find your values. They default to 1000 if you leave them out.
-
 ## *arr integration (Sonarr, Radarr, Prowlarr)
 
 CardinalDL can act as a Torznab indexer, which lets Sonarr, Radarr, or Prowlarr search and grab from it like any other indexer.

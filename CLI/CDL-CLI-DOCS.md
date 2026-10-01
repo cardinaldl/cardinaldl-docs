@@ -28,6 +28,7 @@ The CLI does one thing per run, decided by which arguments you pass:
 | List an item | [`--listitem`](#listitem) (`--srz`) | `cardinaldl --service crunchy --srz ABC` |
 | List a season by ID | [`--season`](#season) with a season ID (no `--listitem`, no `--episode`) | `cardinaldl --service crunchy -s SEASON_ID` |
 | List an episode by ID | [`--listitem`](#listitem) (`--srz`) with an episode ID | `cardinaldl --service crunchy --srz EPISODE_ID` |
+| Search a service | [`--search`](#search) | `cardinaldl --service crunchy --search "cowboy bebop"` |
 | Sign in | [`--login`](#login) | `cardinaldl --login --username you --password pw` |
 | List languages | [`--listlangs`](#listlangs) | `cardinaldl --listlangs` |
 | Restore settings backup | [`--sync-download`](#sync-download) + [`--sync-key`](#sync-key) | `cardinaldl --sync-download --sync-key 'your-key'` |
@@ -73,6 +74,7 @@ Downloading/listing an episode or season by its bare ID works only on services t
     - [`--full`](#full)
     - [`--workers`, `-w`](#workers)
     - [`--jsonoutput`, `--jo`](#jsonoutput)
+    - [`--search`](#search)
     - [`--listlangs`](#listlangs)
 - [Authentication](#authentication)
     - [`--login`](#login)
@@ -98,7 +100,7 @@ Downloading/listing an episode or season by its bare ID works only on services t
 
 | Aliases | Type | Choices | Default |
 | :-- | :-- | :-- | :-- |
-| none | choice | `adn`, `akiba`, `amazon`, `animebox`, `appletv`, `crunchy`, `disney`, `hbomax`, `hidive`, `jonuplay`, `joyn`, `mgm`, `netflix`, `oceanveil`, `paramount`, `peacock`, `playerpl`, `rtl`, `toggo`, `viki` | none (required) |
+| none | choice | `adn`, `akiba`, `amazon`, `animebox`, `appletv`, `crunchy`, `disney`, `hbomax`, `hidive`, `jonuplay`, `joyn`, `justwatch`, `mgm`, `netflix`, `oceanveil`, `paramount`, `peacock`, `playerpl`, `rtl`, `shudder`, `skyshowtime`, `toggo`, `viki` | none (required) |
 
 The service to use, by short name. The value is lower-cased, so `CRUNCHY` and `crunchy` are the same.  
 Required for every mode except [`--login`](#login), [`--listlangs`](#listlangs), [`--self-update`](#self-update), and [`--sync-download`](#sync-download). Omitting it where it is required exits with `Missing required argument: service`.  
@@ -156,17 +158,17 @@ Passed on its own with an episode ID (no [`--item`](#item) and no [`--season`](#
 
 | Aliases | Type | Choices | Default |
 | :-- | :-- | :-- | :-- |
-| `--vq`, `--videoQuality` | string (`resolution@codec@range`) | n/a | GUI Quality page |
+| `--vq`, `--videoQuality` | string (`resolution@codec@range`) | n/a | Video & audio page |
 
 Video quality as `resolution@codec@range`. Examples: `1080p`, `2160p@hevc@dv`, `1080p@@dv` (empty codec slot).  
-Use `highest` as the resolution to take the best available. Any slot you leave empty follows the GUI Quality page. Resolutions snap to the nearest known tier.  
+Use `highest` as the resolution to take the best available. Any slot you leave empty follows the Video & audio page. Resolutions snap to the nearest known tier.  
 A specific resolution you type is treated as an exact requirement and fails if it is missing, unless you also pass [`--fallback`](#fallback).
 
 #### <a id="hybrid"></a>`--hybrid`
 
 | Aliases | Type | Choices | Default |
 | :-- | :-- | :-- | :-- |
-| none | boolean | n/a | GUI Quality page (`createHybridByDefault`) |
+| none | boolean | n/a | Video & audio page (`createHybridByDefault`) |
 
 Generate a hybrid video track when the service supports it.
 
@@ -176,7 +178,7 @@ Generate a hybrid video track when the service supports it.
 | :-- | :-- | :-- | :-- |
 | none | boolean | n/a | `false` |
 
-When a requested quality cannot be met, fall through the GUI Quality page priorities and take the next-best track instead of failing.  
+When a requested quality cannot be met, fall through the Video & audio page priorities and take the next-best track instead of failing.  
 Applies to both video and audio selection. When a fallback happens, the CLI prints what it had to give up (resolution, codec, or range).
 
 #### <a id="novideo"></a>`--novideo`
@@ -196,10 +198,10 @@ Combining `--novideo`, [`--noaudio`](#noaudio), and [`--nosubs`](#nosubs) all at
 
 | Aliases | Type | Choices | Default |
 | :-- | :-- | :-- | :-- |
-| `--aq`, `--audioQuality` | string (`LANG:format@channels@kbps`) | n/a | GUI Quality page |
+| `--aq`, `--audioQuality` | string (`LANG:format@channels@kbps`) | n/a | Video & audio page |
 
 Per-language audio quality as `LANG:format@channels@kbps`. Examples: `EN:atmos,FR:eac3@5.1` or `EN:@5.1` (empty format slot).  
-Comma-separate to list more than one language. Any slot you leave empty follows the GUI Quality page.  
+Comma-separate to list more than one language. Any slot you leave empty follows the Video & audio page.  
 A language named here is added to the dubs to download even if it is not in [`--dublang`](#dublang).
 
 #### <a id="dublang"></a>`--dublang`, `--dl`
@@ -275,7 +277,7 @@ Container to write the finished file into. When not set, the CLI uses the GUI's 
 | :-- | :-- | :-- | :-- |
 | `--fn`, `--fileName` | string | n/a | service default naming |
 
-Output filename. Accepts naming placeholders such as `{seriesName}` or `{episodeNumberDD}`. When not set, the service's default naming is used.
+Output filename. Accepts naming placeholders such as `{seriesName}` or `{episodeNumberDD}`. When not set, the service's default naming is used. That is the per-service episode or movie filename template from the service's own settings page if you set one, otherwise the global template on the Files & folders page (Settings > Downloads > Files & folders).
 
 #### <a id="skipvidmux"></a>`--skipvidmux`
 
@@ -312,7 +314,7 @@ Keep every subtitle track as its own file instead of muxing them in.
 | `--dlp` | string | n/a | GUI download path, else current folder |
 
 Where to write the finished file. When downloading, the path must already exist or the run exits. This applies with [`--item`](#item), a bare [`--episode`](#episode) ID, or a [`--season`](#season) ID plus [`--episode`](#episode).  
-When not set, the CLI uses the GUI's stored download path if this machine can use it, otherwise the current folder.  
+When not set, the CLI uses the output folder from your GUI settings for this service and media type. The global ones live on the Files & folders page (Settings > Downloads > Files & folders) under Output folders, as separate Movies and Series folders, and each service can override them on its own settings page. If none is set it uses your general download path.  
 A stored Windows path on a non-Windows machine is ignored with a warning and the current folder is used instead.  
 The CLI always writes the file directly into this path. It does not build a per-series/season subfolder the way the GUI does.
 
@@ -361,7 +363,18 @@ Maximum parallel workers for [`--full`](#full) listings. Only used with `--full`
 | :-- | :-- | :-- | :-- |
 | `--jo`, `--jsonOutput` | string (file path) | n/a | none (stdout) |
 
-Write listing data as JSON to the given file path instead of printing to stdout. Only affects [`--listitem`](#listitem) and season listings.
+Write listing or search data as JSON to the given file path instead of printing to stdout. Affects [`--listitem`](#listitem), season listings, and [`--search`](#search).
+
+#### <a id="search"></a>`--search`
+
+| Aliases | Type | Choices | Default |
+| :-- | :-- | :-- | :-- |
+| none | string (query) | n/a | none |
+
+Search a service for a title and list the matches, then exit without downloading. Requires [`--service`](#service), and you must be signed in to that service in the GUI first. An empty query is rejected.  
+Each match prints as `[ID] Title`, with any extra details indented under it. The `ID` is the item ID you then pass to [`--item`](#item) or [`--listitem`](#listitem). When nothing matches, it prints `No results found`.  
+Pass [`--jsonoutput`](#jsonoutput) to write the results to a file as JSON instead of printing them. The JSON is `{ "service", "query", "results": [...] }`, where each result has `title`, `urlInput` (the ID), an optional `image`, and optional `custom_data`.  
+`--search` cannot be combined with [`--item`](#item), [`--listitem`](#listitem), [`--season`](#season), [`--episode`](#episode), [`--login`](#login), [`--listlangs`](#listlangs), [`--self-update`](#self-update), or [`--sync-download`](#sync-download).
 
 #### <a id="listlangs"></a>`--listlangs`
 
@@ -405,7 +418,7 @@ Account password, used only with [`--login`](#login).
 
 ## Settings sync
 
-Settings sync keeps a client-side-encrypted copy of your settings and service logins on the CardinalDL server. You set it up in the desktop app under "Account > Settings sync", with a key of at least 8 characters. The server never sees your key or your data, and a lost key means the backup can't be recovered. On the CLI, [`--sync-download`](#sync-download) is the restore side. Creating a backup is done in the GUI.
+Settings sync keeps a client-side-encrypted copy of your settings and service logins on the CardinalDL server. You set it up in the desktop app under "My Account > Settings sync", with a key of at least 8 characters. The server never sees your key or your data, and a lost key means the backup can't be recovered. On the CLI, [`--sync-download`](#sync-download) is the restore side. Creating a backup is done in the GUI.
 
 #### <a id="sync-download"></a>`--sync-download`
 
@@ -527,6 +540,18 @@ List a single episode by its bare episode ID:
 cardinaldl --service crunchy --srz EPISODE_ID
 ```
 
+Search a service for a title (prints each match with its ID):
+
+```
+cardinaldl --service crunchy --search "cowboy bebop"
+```
+
+Search and write the matches to a JSON file:
+
+```
+cardinaldl --service crunchy --search "cowboy bebop" --jsonoutput results.json
+```
+
 Pick quality, dubs, and subtitles:
 
 ```
@@ -620,6 +645,6 @@ If the GUI has nothing set, it uses the built-in default in the table below.
 | Subtitles | [`--dlsubs`](#dlsubs) | `defaultSubs` | none |
 | Subtitle format | [`--forcesubformat`](#forcesubformat) | `defaultSubtitleFormat` | `raw` |
 | Output container | [`--outputformat`](#outputformat) | `DefaultOutputFormat` | `mkv` |
-| Download path | [`--dlpath`](#dlpath) | `downloadPath` | current folder |
+| Download path | [`--dlpath`](#dlpath) | per-service or global Movies/Series folder, else `downloadPath` | current folder |
 | Season | [`--season`](#season) | n/a | `1` |
 | Full-listing workers | [`--workers`](#workers) | n/a | `1` |

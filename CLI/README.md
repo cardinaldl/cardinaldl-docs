@@ -44,6 +44,12 @@ Then try a real listing against a service you have set up:
 cardinaldl --service crunchy --srz SOME_ITEM_ID
 ```
 
+You can also search a service you are signed into to find an item's ID:
+
+```
+cardinaldl --service crunchy --search "cowboy bebop"
+```
+
 If you see this message:
 
 ```
@@ -54,7 +60,7 @@ then the `storage.db` the CLI is reading has no signed in account. Open the GUI 
 
 ## Moving from Windows to Linux
 
-To set up the CLI on another machine, use the Export function in the desktop app to save a copy of your database. It writes a `.db` snapshot of your `storage.db`. Move that file to the new machine and rename it to `storage.db`. Put it at the path from [the table above](#where-storagedb-lives), or keep it in a folder of your choice and point the CLI at it with [`--configpath`](./CDL-CLI-DOCS.md#configpath).
+To set up the CLI on another machine, use the Export database button in the desktop app (Settings > Application > General) to save a copy of your database. It writes a `.db` snapshot of your `storage.db`. Move that file to the new machine and rename it to `storage.db`. Put it at the path from [the table above](#where-storagedb-lives), or keep it in a folder of your choice and point the CLI at it with [`--configpath`](./CDL-CLI-DOCS.md#configpath).
 
 Your service logins and defaults come across in that file. Your CardinalDL account login does not, so sign in once on the new machine:
 
@@ -66,7 +72,7 @@ That signs you in and the CLI works normally after. You only do this once per ma
 
 ## Bringing your settings over with Settings sync
 
-If you turned on Settings sync in the desktop app (Account > Settings sync), you can pull your settings and service logins onto another machine over the network instead of copying the `.db` file by hand. Sign in once, then download your backup:
+If you turned on Settings sync in the desktop app (My Account > Settings sync), you can pull your settings and service logins onto another machine over the network instead of copying the `.db` file by hand. Sign in once, then download your backup:
 
 ```
 cardinaldl --login --username "your_cdl_username" --password "your_cdl_password"
