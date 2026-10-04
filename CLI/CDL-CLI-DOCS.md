@@ -69,6 +69,8 @@ Downloading/listing an episode or season by its bare ID works only on services t
 - [Paths](#paths)
     - [`--dlpath`, `--dlp`](#dlpath)
     - [`--temppath`, `--tp`](#temppath)
+- [Download history](#download-history)
+    - [`--save-to-history`](#save-to-history)
 - [Listing & info](#listing--info)
     - [`--listitem`, `--srz`](#listitem)
     - [`--full`](#full)
@@ -325,6 +327,20 @@ The CLI always writes the file directly into this path. It does not build a per-
 | `--tp`, `--tempPath` | string | n/a | configured temp folder |
 
 Override the temp folder used for in-progress segments before the final file is assembled.
+
+---
+
+## Download history
+
+#### <a id="save-to-history"></a>`--save-to-history`
+
+| Aliases | Type | Choices | Default |
+| :-- | :-- | :-- | :-- |
+| `--saveToHistory` | boolean | n/a | `false` |
+
+Record each successfully downloaded item to the completed-downloads history, the same history the GUI and the Docker web UI show.  
+By default a CLI download finishes without touching that list, so nothing you download from the command line appears there unless you pass this flag. Each item is added as it completes, and it merges into the stored history rather than replacing it.  
+Has no effect in listing, search, or other non-download modes.
 
 ---
 
@@ -624,6 +640,12 @@ Download all subtitles for the episode and keep the subtitles as individual ASS 
 cardinaldl --service crunchy -i ID -s 1 -e 1 --dlsubs all --novideo --noaudio --forcesubformat ass
 ```
 
+Download a season and record each episode in the completed-downloads history so it shows up in the GUI:
+
+```
+cardinaldl --service crunchy -i ID -s 1 -e 1-24 --save-to-history
+```
+
 ---
 
 ## How defaults work
@@ -648,3 +670,4 @@ If the GUI has nothing set, it uses the built-in default in the table below.
 | Download path | [`--dlpath`](#dlpath) | per-service or global Movies/Series folder, else `downloadPath` | current folder |
 | Season | [`--season`](#season) | n/a | `1` |
 | Full-listing workers | [`--workers`](#workers) | n/a | `1` |
+| Save to history | [`--save-to-history`](#save-to-history) | n/a | off |

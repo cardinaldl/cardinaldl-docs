@@ -5,15 +5,21 @@ services:
             - '${PORT:-4173}:4173'
             - '${ARR_PORT:-9117}:9117'
         volumes:
+            # CDL conf
             - ./cdl/config:/config
-            - ./cdl/downloads:/downloads
             - ./cdl/temp:/tmp
+            # CDL arr integration
             - ./cdl/arr/arr-torrents:/data/torrents
             - ./cdl/arr/arr-completed:/data/completed
+            # CDL download roots
+            - ./cdl/downloads:/downloads
+            - ./cdl/downloads2:/downloads2
         environment:
+            PUID: ${PUID:-1000}
+            PGID: ${PGID:-1000}
             PORT: 4173
             REMOTE_ACCESS_PASSWORD: ${REMOTE_ACCESS_PASSWORD:-}
-            DOWNLOAD_PATH: /downloads
+            DOWNLOAD_ROOTS: /downloads,/downloads2
             TEMP_PATH: /tmp
             ARR_INTEGRATION_ENABLED: '${ARR_INTEGRATION_ENABLED:-false}'
             ARR_TORRENT_FOLDER: /data/torrents

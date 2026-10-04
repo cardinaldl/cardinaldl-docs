@@ -22,7 +22,7 @@ This folder has everything you need to get going:
    cp .env-example .env
    ```
 
-   Open `.env` and set `REMOTE_ACCESS_PASSWORD` to something strong. This is the password you type to open the web UI.
+   Open `.env` and set `REMOTE_ACCESS_PASSWORD` to something strong. This is the password you type to open the web UI. While you are in there, set `PUID` and `PGID` to your own user (run `id` on Linux) so your downloads are not owned by root.
 
 3. Start it:
 
@@ -63,12 +63,15 @@ The folders are created on first start if they do not exist.
 | Host folder | Container path | What lives there |
 | :-- | :-- | :-- |
 | `./cdl/config` | `/config` | Your `storage.db` (account, service logins, settings). Keep this one. |
-| `./cdl/downloads` | `/downloads` | Finished downloads |
+| `./cdl/downloads` | `/downloads` | Finished downloads (the first download root) |
+| `./cdl/downloads2` | `/downloads2` | A second download root you can choose from in the web UI |
 | `./cdl/temp` | `/tmp` | Work in progress files before muxing |
 | `./cdl/arr/arr-torrents` | `/data/torrents` | The *arr watch folder for incoming grabs |
 | `./cdl/arr/arr-completed` | `/data/completed` | The *arr completed folder |
 
 Your `storage.db` sits at `./cdl/config/storage/storage.db` on the host. That is the one file to back up if you want to keep your account and settings, and it is the file you swap in when moving a login over from the desktop app.
+
+The compose file ships with two download roots, `/downloads` and `/downloads2`, so you can choose where each download lands from the web UI. See [Download roots](#download-roots) for how they work and how to add more. If you only ever want one, delete the `downloads2` volume line and drop `/downloads2` from `DOWNLOAD_ROOTS`.
 
 ## Environment variables
 
@@ -80,9 +83,20 @@ The tunable ones are listed in `.env-example` with their defaults, so copy that 
 | :-- | :-- | :-- |
 | `PORT` | `4173` | Port the web UI and download server listen on |
 | `CONFIG_PATH` | `/config` | Base folder for `storage.db` and other data. The image sets this for you. |
-| `DOWNLOAD_PATH` | `/downloads` | Where finished files go. Written into your settings on start. |
+| `DOWNLOAD_ROOTS` | `/downloads,/downloads2` (set by the compose file) | Comma list of folders you are allowed to download into and can choose from in the web UI. The first one becomes your default download path on first start. See [Download roots](#download-roots). |
+| `DOWNLOAD_PATH` | none | Legacy single download root. Still honored as a fallback when `DOWNLOAD_ROOTS` is not set, so older setups keep working. Prefer `DOWNLOAD_ROOTS`. |
 | `TEMP_PATH` | `/tmp` | Where in progress files go. Written into your settings on start. |
 | `LISTEN_ADDRESS` | `0.0.0.0` | Address the server binds to. The default listens on every interface, which is what you want inside a container. Advanced. |
+
+### Permissions
+
+These control the user the container runs as and the permissions on the files it creates. See [File ownership and permissions](#file-ownership-and-permissions) for the full picture.
+
+| Variable | Default | What it does |
+| :-- | :-- | :-- |
+| `PUID` | `1000` | User ID the app runs as, and that downloaded files are owned by on the host |
+| `PGID` | `1000` | Group ID the app runs as, and that downloaded files are owned by on the host |
+| `UMASK` | `022` | Permission mask for files and folders the app creates. `022` gives `755` folders and `644` files. |
 
 ### Remote access
 
@@ -109,6 +123,30 @@ The web UI is protected by a password so that only you can reach it.
 - Set `REMOTE_ACCESS_PASSWORD` to choose the password. While this variable is set you cannot change the password from inside the web UI, because the environment controls it.
 - If you leave it empty, CardinalDL creates a random password on first start and saves it. You will not be shown that password, so set your own instead.
 - If you ever set the password from inside the web UI rather than the environment, it needs to be at least 8 characters.
+
+## Download roots
+
+A download root is a folder the server is allowed to write into. `DOWNLOAD_ROOTS` is a comma list of them, and the compose file ships with two: `/downloads` and `/downloads2` (mapped to `./cdl/downloads` and `./cdl/downloads2` on the host).
+
+The first root is used as your default download path on first start, unless you already have one saved.
+
+To add another root:
+
+1. Add a bind mount for it in the compose file, for example `- ./cdl/movies:/movies`.
+2. Append its container path to `DOWNLOAD_ROOTS`, for example `DOWNLOAD_ROOTS: /downloads,/downloads2,/movies`.
+3. Recreate the container with `docker compose up -d`. New roots are created and ownership is set to `PUID:PGID` on start.
+
+To use a single root, keep one entry in `DOWNLOAD_ROOTS` and remove the extra volume line.
+
+## File ownership and permissions
+
+By default the container starts as root, then drops to `PUID:PGID` (default `1000:1000`) before running the app. Your downloaded files, config, and temp files end up owned by that user on the host, so set `PUID`/`PGID` to your own user to avoid root-owned files. On Linux, run `id` to find your values.
+
+On start, the container sets ownership of the config, temp, download roots, and *arr folders to `PUID:PGID`, so a fresh bind mount comes out owned by you.
+
+`UMASK` (default `022`) sets the permissions on files and folders the app creates. `022` gives `755` folders and `644` files (owner write, everyone read). Set something like `002` if you want group members to be able to write too. An invalid value is ignored with a warning and the default is used.
+
+If you instead start the container as a specific user (compose `user:` or `docker run --user`), it runs as that user directly: the `PUID`/`PGID` switch and the ownership fixup are skipped, though `UMASK` still applies.
 
 ## *arr integration (Sonarr, Radarr, Prowlarr)
 

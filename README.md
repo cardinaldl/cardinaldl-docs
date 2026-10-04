@@ -2,7 +2,7 @@
 
 A simple CLI and GUI for downloading videos.
 
-Last updated for: v3.10.0
+Last updated for: v3.10.3
 
 ## Ways to run it
 
