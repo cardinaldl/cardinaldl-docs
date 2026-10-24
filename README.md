@@ -21,4 +21,4 @@ If you are new, start with the desktop app. You sign in and log into your stream
 - [Docker guide](./docker/README.md) - run CardinalDL as a server with settings and *arr integration.
 - [CLI setup](./CLI/README.md) - get the command line tool working, including moving your config between machines.
 - [CLI reference](./CLI/CDL-CLI-DOCS.md) - every flag and some example commands.
-- [Service guides](./services/) - guides for individual services that require cookie auth
+- [FAQ](./faq.md) - common login, download, and playback questions, plus cookie exporter recommendations and how to reach support
