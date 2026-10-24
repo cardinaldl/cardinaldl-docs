@@ -29,7 +29,7 @@ The CLI does one thing per run, decided by which arguments you pass:
 | List a season by ID | [`--season`](#season) with a season ID (no `--listitem`, no `--episode`) | `cardinaldl --service crunchy -s SEASON_ID` |
 | List an episode by ID | [`--listitem`](#listitem) (`--srz`) with an episode ID | `cardinaldl --service crunchy --srz EPISODE_ID` |
 | Search a service | [`--search`](#search) | `cardinaldl --service crunchy --search "cowboy bebop"` |
-| Sign in | [`--login`](#login) | `cardinaldl --login --username you --password pw` |
+| Sign in | [`--login`](#login) | `cardinaldl --login --email you@example.com --password pw` |
 | List languages | [`--listlangs`](#listlangs) | `cardinaldl --listlangs` |
 | Restore settings backup | [`--sync-download`](#sync-download) + [`--sync-key`](#sync-key) | `cardinaldl --sync-download --sync-key 'your-key'` |
 | Update the CLI | [`--self-update`](#self-update) | `cardinaldl --self-update` |
@@ -80,7 +80,7 @@ Downloading/listing an episode or season by its bare ID works only on services t
     - [`--listlangs`](#listlangs)
 - [Authentication](#authentication)
     - [`--login`](#login)
-    - [`--username`](#username)
+    - [`--email`](#email)
     - [`--password`](#password)
 - [Settings sync](#settings-sync)
     - [`--sync-download`](#sync-download)
@@ -102,7 +102,7 @@ Downloading/listing an episode or season by its bare ID works only on services t
 
 | Aliases | Type | Choices | Default |
 | :-- | :-- | :-- | :-- |
-| none | choice | `adn`, `akiba`, `amazon`, `animebox`, `appletv`, `crunchy`, `disney`, `hbomax`, `hidive`, `jonuplay`, `joyn`, `justwatch`, `mgm`, `netflix`, `oceanveil`, `paramount`, `peacock`, `playerpl`, `rtl`, `shudder`, `skyshowtime`, `toggo`, `viki` | none (required) |
+| none | choice | `adn`, `akiba`, `amazon`, `animebox`, `appletv`, `crunchy`, `disney`, `hbomax`, `hidive`, `jonuplay`, `joyn`, `justwatch`, `ma`, `mgm`, `netflix`, `oceanveil`, `paramount`, `peacock`, `playerpl`, `rtl`, `shudder`, `skyshowtime`, `toggo`, `viki` | none (required) |
 
 The service to use, by short name. The value is lower-cased, so `CRUNCHY` and `crunchy` are the same.  
 Required for every mode except [`--login`](#login), [`--listlangs`](#listlangs), [`--self-update`](#self-update), and [`--sync-download`](#sync-download). Omitting it where it is required exits with `Missing required argument: service`.  
@@ -279,7 +279,68 @@ Container to write the finished file into. When not set, the CLI uses the GUI's 
 | :-- | :-- | :-- | :-- |
 | `--fn`, `--fileName` | string | n/a | service default naming |
 
-Output filename. Accepts naming placeholders such as `{seriesName}` or `{episodeNumberDD}`. When not set, the service's default naming is used. That is the per-service episode or movie filename template from the service's own settings page if you set one, otherwise the global template on the Files & folders page (Settings > Downloads > Files & folders).
+Output filename. When not set, the service's default naming is used. That is the per-service episode or movie filename template from the service's own settings page if you set one, otherwise the global template on the Files & folders page (Settings > Downloads > Files & folders).
+
+The value is a template: any `{placeholder}` in it is replaced with the matching value, and the rest is kept as you typed it. A value with **no** braces is used literally as the filename. Don't add an extension, the container from [`--outputformat`](#outputformat) adds it. In a template, illegal filename characters are stripped and any placeholder that has no value, or that is misspelled, is dropped and the leftover separators are tidied up.
+
+The same placeholders work here, on the GUI's Files & folders page, and in each service's own template. They fall into three groups.
+
+**Content** - known before the download starts:
+
+| Placeholder | Replaced with |
+| :-- | :-- |
+| `{seriesName}` | Series title |
+| `{seriesNameDots}` | Series title with dots instead of spaces |
+| `{movieName}` | Movie title |
+| `{movieNameDots}` | Movie title with dots instead of spaces |
+| `{episodeName}` | Episode title |
+| `{episodeNameDots}` | Episode title with dots instead of spaces |
+| `{year}` | Release year |
+| `{seasonNumber}` | Season number |
+| `{seasonNumberDD}` | Two-digit season number, e.g. `01` |
+| `{episodeNumber}` | Episode number |
+| `{episodeNumberDD}` | Two-digit episode number, e.g. `05` |
+| `{episodeID}` | Service episode ID |
+
+**MediaInfo** - read from the finished file, so they reflect what was actually downloaded:
+
+| Placeholder | Replaced with |
+| :-- | :-- |
+| `{quality}` | Detected resolution, e.g. `1080p` |
+| `{width}` | Detected video width |
+| `{height}` | Detected video height |
+| `{videoCodec}` | Detected video codec, e.g. `H264` or `H265` |
+| `{videoCodecX}` | Detected video codec in x264/x265 style |
+| `{bitDepth}` | Detected bit depth, e.g. `10bit` |
+| `{audioCodec}` | Detected primary audio codec, e.g. `AAC` or `EAC3` |
+| `{audioAtmos}` | `Atmos` if the primary audio track has Atmos, empty otherwise |
+| `{audioChannels}` | Detected channel layout, e.g. `2.0` or `5.1` |
+| `{dynamicRange}` | Detected HDR format, e.g. `HDR10` or `DV` |
+
+**Languages & source**:
+
+| Placeholder | Replaced with |
+| :-- | :-- |
+| `{audioLanguage}` | Primary audio language name |
+| `{audioLanguageCode}` | Primary audio language code |
+| `{audioLanguages}` | All audio language names |
+| `{audioLanguageCodes}` | All audio language codes |
+| `{audioLanguageShort}` | Primary short language tag, e.g. `Ger` or `Jap` |
+| `{audioLanguagesShort}` | All short audio language tags |
+| `{subtitleLanguage}` | Primary subtitle language name |
+| `{subtitleLanguageCode}` | Primary subtitle language code |
+| `{subtitleLanguages}` | All subtitle language names |
+| `{subtitleLanguageCodes}` | All subtitle language codes |
+| `{subtitleLanguageShort}` | Primary short subtitle language tag, e.g. `Ger` |
+| `{subtitleLanguagesShort}` | All short subtitle language tags, e.g. `Ger.Eng` |
+| `{subtitleRelease}` | All short subtitle tags plus `Sub`, e.g. `Ger.Eng.Sub` |
+| `{dualAudio}` | Audio mode: empty for one track, `DL` for two, `ML` for more |
+| `{service}` | Full service name |
+| `{source}` | Short source tag, e.g. `CR` or `AMZN` |
+| `{sourceType}` | Source type, always `WEB` |
+| `{autoGerSubDub}` | Legacy `GerDub`/`GerSub` value |
+
+Because the MediaInfo and language placeholders are filled from the finished file, a template that uses them is only resolved after the download completes.
 
 #### <a id="skipvidmux"></a>`--skipvidmux`
 
@@ -411,16 +472,17 @@ Works without a service and without being signed in, since it only reads the bui
 | :-- | :-- | :-- | :-- |
 | none | boolean | n/a | `false` |
 
-Sign in to your CardinalDL account from the command line. Requires both [`--username`](#username) and [`--password`](#password).  
+Sign in to your CardinalDL account from the command line. Requires both [`--email`](#email) and [`--password`](#password).  
 This clears any stored account and device keys first, then signs in fresh. `--service` is not required in this mode.
 
-#### <a id="username"></a>`--username`
+#### <a id="email"></a>`--email`
 
 | Aliases | Type | Choices | Default |
 | :-- | :-- | :-- | :-- |
 | none | string | n/a | none |
 
-Account username, used only with [`--login`](#login).
+Account email address, used only with [`--login`](#login). It must be a valid email address; the CLI rejects anything that isn't before trying to sign in.  
+Older accounts signed in with a username. Those now log in by email, and existing username accounts can be migrated at <https://cardinaldl.com/portal/login?migrate=1>.
 
 #### <a id="password"></a>`--password`
 
@@ -607,13 +669,13 @@ cardinaldl --listlangs
 Sign in from the command line:
 
 ```
-cardinaldl --login --username "your_cdl_username" --password "your_cdl_password"
+cardinaldl --login --email "you@example.com" --password "your_cdl_password"
 ```
 
 Restore your settings backup onto this machine (sign in first if this install is new):
 
 ```
-cardinaldl --login --username "your_cdl_username" --password "your_cdl_password"
+cardinaldl --login --email "you@example.com" --password "your_cdl_password"
 cardinaldl --sync-download --sync-key "your-encryption-key"
 ```
 
