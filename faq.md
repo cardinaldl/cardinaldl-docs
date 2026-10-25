@@ -39,6 +39,7 @@ As long as it can export in Netscape format, CardinalDL can import it.
     - [Browse page shows no services even though I enabled them](#general-no-services-enabled)
     - [Downloaded media appears longer than the timestamp](#general-media-longer-than-timestamp)
     - [DV hybrid option not available](#general-dv-hybrid-not-available)
+    - [How to install mkvtoolnix](#general-install-mkvtoolnix)
 - [Netflix](#faq-netflix)
     - [Can't download 4k content from Netflix](#netflix-4k-not-available)
     - [Can't download anything from Netflix](#netflix-cant-download-anything)
@@ -74,6 +75,31 @@ To fix this, enable the timing fix under "Settings > Downloads > Subtitles > ASS
 Look at the available streams. For the DV hybrid option to show up, CardinalDL has to pair a Dolby Vision stream with an HDR10 or HDR10+ stream that share the same aspect ratio and frame rate. If no HDR stream shares the Dolby Vision stream's aspect ratio, for example one is 16:9 and the other is a wider scope crop, the option will not be available.
 
 Some services like Disney+ have native hybrid content, meaning they already provide a combined Dolby Vision and HDR stream. In such cases, the DV hybrid option will not be available because the content is already in its optimal format.
+
+#### <a id="general-install-mkvtoolnix"></a>How to install mkvtoolnix
+
+mkvtoolnix's `mkvmerge` and `mkvpropedit` are bundled in the Windows release however you need to install mkvtoolnix manually on macOS and Linux.  
+Note: Make sure you install at least v99. Around versions v80-90 there was a chapters handling bug that could cause issues.
+
+For Linux:
+
+1. Find your distro from mkvtoolnix's [official download page](https://mkvtoolnix.download/downloads.html). In this example im using ubuntu.
+2. Run the following commands. Change the `echo` values to what mkvtoolnix recommends for your distribution.
+
+```bash
+wget -O /etc/apt/keyrings/gpg-pub-moritzbunkus.gpg https://mkvtoolnix.download/gpg-pub-moritzbunkus.gpg
+
+# change the "deb...noble main" and "deb-src...noble main" lines to match what mkvtoolnix has for your distribution
+echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/gpg-pub-moritzbunkus.gpg] https://mkvtoolnix.download/ubuntu/ noble main" > /etc/apt/sources.list.d/mkvtoolnix.download.list
+echo "deb-src [arch=amd64 signed-by=/etc/apt/keyrings/gpg-pub-moritzbunkus.gpg] https://mkvtoolnix.download/ubuntu/ noble main" >> /etc/apt/sources.list.d/mkvtoolnix.download.list
+
+apt update
+apt install mkvtoolnix
+```
+
+Now simply run `mkvmerge --version` to verify that mkvtoolnix has been installed correctly. If it outputs the version information, the installation was successful and CardinalDL should be able to use mkvtoolnix for its operations.
+
+<!-- TODO: add macOS brew installation instructions here as well -->
 
 ### <a id="faq-netflix"></a>Netflix
 
